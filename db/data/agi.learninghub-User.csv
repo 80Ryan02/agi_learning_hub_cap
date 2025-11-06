@@ -1,0 +1,4 @@
+ID;name;email;avatarUrl;role_ID
+100;Max Mustermann;max@example.com;https://example.com/avatars/max.png;1
+101;Anna Schmidt;anna@example.com;https://example.com/avatars/anna.png;2
+102;Markus Lehrer;markus@example.com;https://example.com/avatars/markus.png;3

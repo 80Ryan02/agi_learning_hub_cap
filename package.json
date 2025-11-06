@@ -1,0 +1,40 @@
+{
+  "name": "agi-learning-hub",
+  "version": "1.0.0",
+  "description": "Learning Hub",
+  "scripts": {
+    "start": "cds watch"
+  },
+  "dependencies": {
+    "@sap/cds": "^7",
+    "@cap-js/sqlite": "^1"
+  },
+  "cds": {
+    "requires": {
+      "auth": {
+        "kind": "mocked",
+        "users": {
+          "admin": {
+            "password": "admin123",
+            "roles": ["admin"]
+          },
+          "instructor": {
+            "password": "instructor123",
+            "roles": ["instructor"]
+          },
+          "user": {
+            "password": "user123",
+            "roles": ["authenticated"]
+          }
+        }
+      },
+      "db": {
+        "kind": "sqlite",
+        "model": ["db/schema"]
+      }
+    },
+    "odata": {
+      "version": "v4"
+    }
+  }
+}

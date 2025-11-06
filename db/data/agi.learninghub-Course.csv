@@ -1,0 +1,4 @@
+ID;title;description;isPublic;level_ID;createdBy;modifiedBy
+300;Intro to AI;Learn the basic principles of AI;true;1;instructor;instructor
+301;Supervised Learning;Learn regression and classification;true;2;instructor;instructor
+302;Unsupervised Learning;Explore clustering and dimensionality reduction;true;2;instructor;instructor

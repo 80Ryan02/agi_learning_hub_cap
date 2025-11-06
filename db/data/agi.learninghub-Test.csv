@@ -1,0 +1,4 @@
+ID;title;description;thresholdPercent;timeLimitMinutes;unit_ID;course_ID
+600;AI Basics Quiz;Short quiz on AI;60;15;400;300
+601;Supervised Learning Test;Check regression understanding;70;20;401;301
+602;Clustering Challenge;Evaluate clustering knowledge;70;20;402;302

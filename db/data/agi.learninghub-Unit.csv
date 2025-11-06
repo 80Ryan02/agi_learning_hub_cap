@@ -1,0 +1,4 @@
+ID;title;description;course_ID;createdBy;modifiedBy
+400;AI Overview;Overview of AI fields;300;instructor;instructor
+401;Regression Models;Hands-on with supervised regression;301;instructor;instructor
+402;Clustering Techniques;Introduction to K-Means and DBSCAN;302;instructor;instructor

@@ -1,0 +1,6 @@
+ID;title;question_ID;isCorrect
+800;Artificial Intelligence;700;true
+801;Machine Intelligence;700;false
+802;Learning from labeled data;701;true
+803;Grouping data without labels;702;true
+804;Sorting numbers;702;false
