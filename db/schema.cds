@@ -1,142 +1,143 @@
 using { cuid, managed } from '@sap/cds/common';
 namespace agi.learninghub;
 
-entity Role : cuid, managed {
+entity Roles : cuid, managed {
   title : String(120);
 }
 
-entity User : cuid, managed {
+entity Users : cuid, managed {
   name       : String(120);
   avatarUrl  : String(255);
   @assert.format: '^[\\w.%+-]+@[\\w.-]+\\.[A-Za-z]{2,}$'
   @assert.notNull
   email      : String(255);
-  role       : Association to Role;
+  role       : Association to one Roles;
 }
 
-entity Journey : cuid, managed {
+entity Journeys : cuid, managed {
   title              : String(120);
-  description        : String(1111);
+  description        : String;
   isPublic           : Boolean;
-  journeyProgresses  : Composition of many JourneyProgress on journeyProgresses.journey = $self;
-  journeyCourses     : Composition of many JourneyCourse on journeyCourses.journey = $self;
+
+  journeyProgresses  : Association to many JourneyProgresses on journeyProgresses.journey = $self;
+  journeyCourses     : Composition of many JourneyCourses  on journeyCourses.journey = $self;
 }
 
-entity JourneyCourse : cuid, managed {
-  journey : Association to Journey;
-  course  : Association to Course;
+entity JourneyCourses : cuid, managed {
+  journey : Association to one Journeys;
+  course  : Association to one Courses;
 }
 
-entity Course : cuid, managed {
+entity Courses : cuid, managed {
   title            : String(120);
-  description      : String(1111);
+  description      : String;
   isPublic         : Boolean;
-  level            : Association to Level;
-  courseCategories : Composition of many CourseCategory on courseCategories.course = $self;
-  units            : Composition of many Unit on units.course = $self;
-  courseProgresses : Composition of many CourseProgress on courseProgresses.course = $self;
-  journeyCourses   : Composition of many JourneyCourse on journeyCourses.course = $self;
+  level            : Association to one Levels;
+  courseCategories : Composition of many CourseCategories on courseCategories.course = $self;
+  units            : Composition of many Units on units.course = $self;
+  courseProgresses : Composition of many CourseProgresses on courseProgresses.course = $self;
+  journeyCourses   : Composition of many JourneyCourses on journeyCourses.course = $self;
 }
 
-entity Unit : cuid, managed {
+entity Units : cuid, managed {
   title          : String(120);
-  description    : String(1111);
-  chapters       : Composition of many Chapter on chapters.unit = $self;
-  unitProgresses : Composition of many UnitProgress on unitProgresses.unit = $self;
-  course         : Association to Course;
+  description    : String;
+  chapters       : Composition of many Chapters on chapters.unit = $self;
+  unitProgresses : Composition of many UnitProgresses on unitProgresses.unit = $self;
+  course         : Association to one Courses;
 }
 
-entity Chapter : cuid, managed {
+entity Chapters : cuid, managed {
   title           : String(120);
-  description     : String(1111);
-  durationMinutes : Int16;
+  description     : String;
+  durationMinutes : Integer;
   htmlContent     : LargeString;
-  unit            : Association to Unit;
+  unit            : Association to one Units;
 }
 
-entity Test : cuid, managed {
+entity Tests : cuid, managed {
   title             : String(250);
-  description       : String(1111);
-  thresholdPercent  : Int16;
-  timeLimitMinutes  : Int16;
-  questions         : Composition of many Question on questions.test = $self;
-  unit              : Association to Unit;
-  course            : Association to Course;
+  description       : String;
+  thresholdPercent  : Integer;
+  timeLimitMinutes  : Integer;
+  questions         : Composition of many Questions on questions.test = $self;
+  unit              : Association to one Units;
+  course            : Association to one Courses;
 }
 
-entity Question : cuid, managed {
+entity Questions : cuid, managed {
   title     : String(250);
-  test      : Association to Test;
-  answers   : Composition of many Answer on answers.question = $self;
+  test      : Association to one Tests;
+  answers   : Composition of many Answers on answers.question = $self;
 }
 
-entity Answer : cuid, managed {
+entity Answers : cuid, managed {
   title     : String(250);
-  question  : Association to Question;
+  question  : Association to one Questions;
   isCorrect : Boolean;
 }
 
-entity JourneyProgress : cuid, managed {
-  journey   : Association to Journey;
-  user      : Association to User;
+entity JourneyProgresses : cuid, managed {
+  journey   : Association to one Journeys;
+  user      : Association to one Users;
   favorite  : Boolean;
   assigned  : Boolean;
   deadline  : Date;
 }
 
-entity CourseProgress : cuid, managed {
-  course          : Association to Course;
-  journeyProgress : Association to JourneyProgress;
-  user            : Association to User;
+entity CourseProgresses : cuid, managed {
+  course          : Association to one Courses;
+  journeyProgress : Association to one JourneyProgresses;
+  user            : Association to one Users;
   favorite        : Boolean;
   assigned        : Boolean;
   deadline        : Date;
 }
 
-entity UnitProgress : cuid, managed {
-  courseProgress : Association to CourseProgress;
-  unit           : Association to Unit;
+entity UnitProgresses : cuid, managed {
+  courseProgress : Association to one CourseProgresses;
+  unit           : Association to one Units;
 }
 
-entity ChapterProgress : cuid, managed {
-  unitProgress : Association to UnitProgress;
-  chapter      : Association to Chapter;
+entity ChapterProgresses : cuid, managed {
+  unitProgress : Association to one UnitProgresses;
+  chapter      : Association to one Chapters;
   isCompleted  : Boolean;
 }
 
-entity TestProgress : cuid, managed {
-  unitProgress       : Association to UnitProgress;
-  courseProgress     : Association to CourseProgress;
-  questionProgresses : Composition of many QuestionProgress on questionProgresses.testProgress = $self;
+entity TestProgresses : cuid, managed {
+  unitProgress       : Association to one UnitProgresses;
+  courseProgress     : Association to one CourseProgresses;
+  questionProgresses : Composition of many QuestionProgresses on questionProgresses.testProgress = $self;
   title              : String(250);
-  description        : String(1111);
-  thresholdPercent   : Int16;
-  timeLimitMinutes   : Int16;
+  description        : String;
+  thresholdPercent   : Integer;
+  timeLimitMinutes   : Integer;
 }
 
-entity QuestionProgress : cuid, managed {
-  testProgress     : Association to TestProgress;
-  answerProgresses : Composition of many AnswerProgress on answerProgresses.questionProgress = $self;
+entity QuestionProgresses : cuid, managed {
+  testProgress     : Association to one TestProgresses;
+  answerProgresses : Composition of many AnswerProgresses on answerProgresses.questionProgress = $self;
   title            : String(250);
 }
 
-entity AnswerProgress : cuid, managed {
-  questionProgress : Association to QuestionProgress;
+entity AnswerProgresses : cuid, managed {
+  questionProgress : Association to one QuestionProgresses;
   title            : String(250);
   isCorrect        : Boolean;
   isSelected       : Boolean;
 }
 
-entity Level : cuid, managed {
+entity Levels : cuid, managed {
   title : String(120);
 }
 
-entity Category : cuid, managed {
+entity Categories : cuid, managed {
   title            : String(120);
-  courseCategories : Composition of many CourseCategory on courseCategories.category = $self;
+  courseCategories : Composition of many CourseCategories on courseCategories.category = $self;
 }
 
-entity CourseCategory : cuid {
-  course   : Association to Course;
-  category : Association to Category;
+entity CourseCategories : cuid {
+  course   : Association to one Courses;
+  category : Association to one Categories;
 }

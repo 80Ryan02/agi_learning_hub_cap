@@ -13,6 +13,7 @@
     "requires": {
       "auth": {
         "kind": "mocked",
+        "strategy": "basic",
         "users": {
           "admin": {
             "password": "admin123",
@@ -29,8 +30,7 @@
         }
       },
       "db": {
-        "kind": "sqlite",
-        "model": ["db/schema"]
+        "kind": "sqlite"
       }
     },
     "odata": {
