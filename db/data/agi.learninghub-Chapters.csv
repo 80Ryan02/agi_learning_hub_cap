@@ -1,4 +1,7 @@
-ID;title;description;durationMinutes;htmlContent;unit_ID;createdBy;modifiedBy
-500;What is AI?;Understanding what AI means;10;<p>AI basics</p>;400;instructor;instructor
-501;Linear Regression;Mathematical foundations;20;<p>Linear regression explanation</p>;401;instructor;instructor
-502;K-Means Clustering;Grouping data points;15;<p>K-Means steps</p>;402;instructor;instructor
+ID;createdAt;createdBy;modifiedAt;modifiedBy;title;description;durationMinutes;htmlContent;unit_ID
+"2001";"2025-11-13T09:00:20.309Z";"instructor";"2025-11-13T09:00:20.309Z";"instructor";"What is AI?";"Introduction to artificial intelligence";10;"<p>Welcome to AI!</p>";"1000"
+"2002";"2025-11-13T09:00:20.309Z";"instructor";"2025-11-13T09:00:20.309Z";"instructor";"History of AI";"Early milestones in AI research";8;"<p>History content here</p>";"1000"
+"2003";"2025-11-13T09:00:20.309Z";"instructor";"2025-11-13T09:00:20.309Z";"instructor";"Linear Regression";"Supervised regression technique";12;"<p>Math formulas...</p>";"1001"
+"2004";"2025-11-13T09:00:20.309Z";"instructor";"2025-11-13T09:00:20.309Z";"instructor";"Logistic Regression";"Binary classification model";15;"<p>Classification theory</p>";"1001"
+"2005";"2025-11-13T09:00:20.309Z";"instructor";"2025-11-13T09:00:20.309Z";"instructor";"Clustering";"Unsupervised learning introduction";10;"<p>K-means, Hierarchical</p>";"1002"
+"2006";"2025-11-13T09:00:20.309Z";"instructor";"2025-11-13T09:00:20.309Z";"instructor";"Dimensionality Reduction";"PCA & feature reduction";14;"<p>PCA example</p>";"1002"

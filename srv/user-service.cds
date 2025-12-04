@@ -1,16 +1,58 @@
-using agi.learninghub as learninghub from '../db/schema';
+using agi.learninghub as lh from '../db/schema';
 
 service UserService @(requires: 'authenticated') {
 
-  entity Journeys         as projection on learninghub.Journeys;
-  entity Courses          as projection on learninghub.Courses;
-  entity Units            as projection on learninghub.Units;
-  entity Chapters         as projection on learninghub.Chapters;
-  entity Tests            as projection on learninghub.Tests;
+  @restrict: [{ grant: 'READ', to: 'User' }]
+  entity Journeys as projection on lh.Journeys;
 
-  entity JourneyProgresses  as projection on learninghub.JourneyProgresses;
-  entity CourseProgresses   as projection on learninghub.CourseProgresses;
-  entity UnitProgresses     as projection on learninghub.UnitProgresses;
-  entity ChapterProgresses  as projection on learninghub.ChapterProgresses;
-  entity TestProgresses     as projection on learninghub.TestProgresses;
+  @restrict: [{ grant: 'READ', to: 'User' }]
+  entity Courses as projection on lh.Courses;
+
+  @restrict: [{ grant: 'READ', to: 'User' }]
+  entity Units as projection on lh.Units;
+
+  @restrict: [{ grant: 'READ', to: 'User' }]
+  entity Chapters as projection on lh.Chapters;
+
+  @restrict: [{ grant: 'READ', to: 'User' }]
+  entity Tests as projection on lh.Tests;
+
+
+  @restrict: [
+    { grant: 'READ',  to: 'User', where: 'user_ID = $user.id' },
+    { grant: 'WRITE', to: 'User', where: 'user_ID = $user.id' }
+  ]
+  entity MyJourneyProgresses as projection on lh.JourneyProgresses;
+
+  @restrict: [
+    { grant: 'READ',  to: 'User', where: 'user_ID = $user.id' },
+    { grant: 'WRITE', to: 'User', where: 'user_ID = $user.id' }
+  ]
+  entity MyCourseProgresses as projection on lh.CourseProgresses;
+
+
+  @restrict: [
+    { grant: ['READ','WRITE'], to: 'User' }
+  ]
+  entity MyUnitProgresses as projection on lh.UnitProgresses;
+
+  @restrict: [
+    { grant: ['READ','WRITE'], to: 'User' }
+  ]
+  entity MyChapterProgresses as projection on lh.ChapterProgresses;
+
+  @restrict: [
+    { grant: ['READ','WRITE'], to: 'User' }
+  ]
+
+
+  entity MyTestProgresses as projection on lh.TestProgresses;
+
+  @restrict: [{ grant: 'EXECUTE', to: 'User' }]
+  action submitTest(testProgress_ID : UUID) 
+    returns {
+      message       : String;
+      scorePercent  : Integer;
+      passed        : Boolean;
+    };
 }

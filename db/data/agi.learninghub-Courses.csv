@@ -1,4 +1,4 @@
-ID;title;description;isPublic;level_ID;createdBy;modifiedBy
-300;Intro to AI;Learn the basic principles of AI;true;1;instructor;instructor
-301;Supervised Learning;Learn regression and classification;true;2;instructor;instructor
-302;Unsupervised Learning;Explore clustering and dimensionality reduction;true;2;instructor;instructor
+ID;title;description;isPublic;level_ID
+a3dde912-8234-41b3-ac89-f1a699f8c2b6;Intro to AI;Learn the basic principles of AI;true;1
+1f6f6e58-b7aa-470c-bc2f-ae64dbe94dcd;Supervised Learning;Learn regression and classification;true;2
+bdc1b084-3a04-47a5-b52e-9c21f4b44c72;Unsupervised Learning;Explore clustering and dimensionality reduction;true;2

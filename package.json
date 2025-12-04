@@ -13,19 +13,18 @@
     "requires": {
       "auth": {
         "kind": "mocked",
-        "strategy": "basic",
         "users": {
-          "admin": {
+          "Admin": {
             "password": "admin123",
-            "roles": ["admin"]
+            "roles": ["Admin"]
           },
-          "instructor": {
+          "Instructor": {
             "password": "instructor123",
-            "roles": ["instructor"]
+            "roles": ["Instructor"]
           },
-          "user": {
+          "User": {
             "password": "user123",
-            "roles": ["authenticated"]
+            "roles": ["User"]
           }
         }
       },
