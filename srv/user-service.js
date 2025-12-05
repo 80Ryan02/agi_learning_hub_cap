@@ -17,9 +17,9 @@ module.exports = (srv) => {
     Tests,
     Questions,
     Answers
-  } = srv.entities;
+  } = cds.entities('agi.learninghub');
 
-  const deny = (req, msg = 'NOT_AUTHORIZED') =>
+  const deny = (req, msg = 'ERROR.NOT_AUTHORIZED') =>
     req.reject(403, req._t(msg));
 
   const getRequestId = (req) =>
@@ -30,7 +30,7 @@ module.exports = (srv) => {
     if (!targetId) return deny(req);
 
     const targetRecord = await SELECT.one.from(entity).where({ ID: targetId });
-    if (!targetRecord) return deny(req, 'NOT_FOUND');
+    if (!targetRecord) return deny(req, 'ERROR.NOT_FOUND');
 
     let ownerId = targetRecord.user_ID;
 
@@ -47,7 +47,6 @@ module.exports = (srv) => {
     if (ownerId !== req.user.id) return deny(req);
     return targetRecord;
   }
-
 
   async function buildJourneyProgress(_, journeyProgressId, journeyId, userId) {
     const journeyCourses = await SELECT.from(JourneyCourses).where({ journey_ID: journeyId });
@@ -135,11 +134,9 @@ module.exports = (srv) => {
     }
   }
 
-
   srv.after('CREATE', JourneyProgresses, async (data, req) => {
     await buildJourneyProgress(null, data.ID, data.journey_ID, req.user.id);
   });
-
 
   srv.before('UPDATE', ChapterProgresses, async (req) => {
 
@@ -148,7 +145,7 @@ module.exports = (srv) => {
     const chapterProgress = await checkOwnership(req, ChapterProgresses);
 
     const chapter = await SELECT.one.from(Chapters).where({ ID: chapterProgress.chapter_ID });
-    if (!chapter) return req.reject(404, req._t('CHAPTER_NOT_FOUND'));
+    if (!chapter) return req.reject(404, req._t('CHAPTER.NOT_FOUND'));
 
     const previousChapters = await SELECT.from(Chapters)
       .where({ unit_ID: chapter.unit_ID })
@@ -163,17 +160,16 @@ module.exports = (srv) => {
     });
 
     if (incompletePrevious.length)
-      return req.reject(409, req._t('CHAPTERS_NOT_COMPLETED'));
+      return req.reject(409, req._t('CHAPTER.PREVIOUS_NOT_COMPLETED'));
   });
-
 
   srv.on('submitTest', async (req) => {
 
     const { testProgress_ID } = req.data;
-    if (!testProgress_ID) return req.reject(400, req._t('TESTPROGRESS_REQUIRED'));
+    if (!testProgress_ID) return req.reject(400, req._t('TEST.PROGRESS_REQUIRED'));
 
     const testProgress = await SELECT.one.from(TestProgresses).where({ ID: testProgress_ID });
-    if (!testProgress) return req.reject(404, req._t('TEST_NOT_FOUND'));
+    if (!testProgress) return req.reject(404, req._t('TEST.NOT_FOUND'));
 
     const courseProgress = await SELECT.one.from(CourseProgresses)
       .where({ ID: testProgress.courseProgress_ID });
@@ -182,7 +178,7 @@ module.exports = (srv) => {
       return deny(req);
 
     if (testProgress.passed != null)
-      return req.reject(409, req._t('TEST_ALREADY_SUBMITTED'));
+      return req.reject(409, req._t('TEST.ALREADY_SUBMITTED'));
 
     const questionProgressList = await SELECT.from(QuestionProgresses)
       .where({ testProgress_ID });
@@ -203,17 +199,18 @@ module.exports = (srv) => {
 
     for (const question of questionProgressList) {
       const answers = answersByQuestion.get(question.ID) || [];
-
-      const isCorrect = answers.length > 0 &&
+      const isCorrect =
+        answers.length > 0 &&
         answers.every(ans => ans.isCorrect === ans.isSelected);
 
       if (isCorrect) correctAnswers++;
     }
 
     const totalQuestions = questionProgressList.length;
-    const scorePercent = totalQuestions === 0
-      ? 0
-      : Math.round((correctAnswers / totalQuestions) * 100);
+    const scorePercent =
+      totalQuestions === 0
+        ? 0
+        : Math.round((correctAnswers / totalQuestions) * 100);
 
     const passed = scorePercent >= testProgress.thresholdPercent;
 
@@ -222,7 +219,7 @@ module.exports = (srv) => {
       .where({ ID: testProgress_ID });
 
     return {
-      message: req._t('TEST_SUBMITTED'),
+      message: req._t('TEST.SUBMITTED'),
       scorePercent,
       passed
     };
