@@ -19,69 +19,71 @@ module.exports = (srv) => {
     Answers
   } = cds.entities('agi.learninghub');
 
-  const deny = (req, msg = 'ERROR.NOT_AUTHORIZED') =>
-    req.reject(403, req._t(msg));
-
-  const getRequestId = (req) =>
-    req?.data?.ID || req?.params?.[0]?.ID || null;
-
-  async function checkOwnership(req, entity) {
-    const targetId = getRequestId(req);
-    if (!targetId) return deny(req);
-
-    const targetRecord = await SELECT.one.from(entity).where({ ID: targetId });
-    if (!targetRecord) return deny(req, 'ERROR.NOT_FOUND');
-
-    let ownerId = targetRecord.user_ID;
-
-    if (!ownerId && targetRecord.courseProgress_ID) {
-      const courseProgress = await SELECT.one
-        .from(CourseProgresses)
-        .columns('user_ID')
-        .where({ ID: targetRecord.courseProgress_ID });
-
-      if (!courseProgress) return deny(req);
-      ownerId = courseProgress.user_ID;
-    }
-
-    if (ownerId !== req.user.id) return deny(req);
-    return targetRecord;
+  function deny(req, message = 'ERROR.NOT_AUTHORIZED') {
+    req.reject(403, req._t(message));
   }
 
-  async function buildJourneyProgress(_, journeyProgressId, journeyId, userId) {
+  function getId(req) {
+    if (req.data?.ID) return req.data.ID;
+    if (req.params?.[0]?.ID) return req.params[0].ID;
+    return null;
+  }
+
+  async function checkOwner(req, entity) {
+    const id = getId(req);
+    if (!id) return deny(req);
+
+    const record = await SELECT.one.from(entity).where({ ID: id });
+    if (!record) return deny(req, 'ERROR.NOT_FOUND');
+
+    let owner = record.user_ID;
+
+    if (!owner && record.courseProgress_ID) {
+      const cp = await SELECT.one.from(CourseProgresses)
+        .columns('user_ID')
+        .where({ ID: record.courseProgress_ID });
+
+      if (!cp) return deny(req);
+      owner = cp.user_ID;
+    }
+
+    if (owner !== req.user.id) return deny(req);
+
+    return record;
+  }
+
+  async function createJourneyProgress(journeyProgressId, journeyId, userId) {
     const journeyCourses = await SELECT.from(JourneyCourses).where({ journey_ID: journeyId });
 
-    for (const journeyCourse of journeyCourses) {
+    for (const item of journeyCourses) {
       const courseProgress = await INSERT.into(CourseProgresses).entries({
-        course_ID: journeyCourse.course_ID,
+        course_ID: item.course_ID,
         journeyProgress_ID: journeyProgressId,
         user_ID: userId
       });
 
-      await buildCourseProgress(_, courseProgress.ID, journeyCourse.course_ID, userId);
+      await createCourseProgress(courseProgress.ID, item.course_ID);
     }
   }
 
+  async function createCourseProgress(courseProgressId, courseId) {
+    const units = await SELECT.from(Units).where({ course_ID: courseId });
 
-  async function buildCourseProgress(_, courseProgressId, courseId, userId) {
-    const courseUnits = await SELECT.from(Units).where({ course_ID: courseId });
-
-    for (const unit of courseUnits) {
+    for (const unit of units) {
       const unitProgress = await INSERT.into(UnitProgresses).entries({
         unit_ID: unit.ID,
         courseProgress_ID: courseProgressId
       });
 
-      await buildChapterProgress(_, unitProgress.ID, unit.ID);
-      await buildTestProgress(_, unitProgress.ID, courseProgressId, unit.ID);
+      await createChapterProgress(unitProgress.ID, unit.ID);
+      await createTestProgress(unitProgress.ID, courseProgressId, unit.ID);
     }
   }
 
+  async function createChapterProgress(unitProgressId, unitId) {
+    const chapters = await SELECT.from(Chapters).where({ unit_ID: unitId });
 
-  async function buildChapterProgress(_, unitProgressId, unitId) {
-    const unitChapters = await SELECT.from(Chapters).where({ unit_ID: unitId });
-
-    for (const chapter of unitChapters) {
+    for (const chapter of chapters) {
       await INSERT.into(ChapterProgresses).entries({
         unitProgress_ID: unitProgressId,
         chapter_ID: chapter.ID,
@@ -90,11 +92,10 @@ module.exports = (srv) => {
     }
   }
 
+  async function createTestProgress(unitProgressId, courseProgressId, unitId) {
+    const tests = await SELECT.from(Tests).where({ unit_ID: unitId });
 
-  async function buildTestProgress(_, unitProgressId, courseProgressId, unitId) {
-    const unitTests = await SELECT.from(Tests).where({ unit_ID: unitId });
-
-    for (const test of unitTests) {
+    for (const test of tests) {
       const testProgress = await INSERT.into(TestProgresses).entries({
         unitProgress_ID: unitProgressId,
         courseProgress_ID: courseProgressId,
@@ -105,122 +106,106 @@ module.exports = (srv) => {
         timeLimitMinutes: test.timeLimitMinutes
       });
 
-      await copyQuestionsAndAnswers(_, testProgress.ID, test.ID);
+      await copyQuestions(testProgress.ID, test.ID);
     }
   }
 
+  async function copyQuestions(testProgressId, testId) {
+    const questions = await SELECT.from(Questions).where({ test_ID: testId });
 
-  async function copyQuestionsAndAnswers(_, testProgressId, testId) {
-    const testQuestions = await SELECT.from(Questions).where({ test_ID: testId });
-
-    for (const question of testQuestions) {
-      const questionProgress = await INSERT.into(QuestionProgresses).entries({
+    for (const q of questions) {
+      const qProgress = await INSERT.into(QuestionProgresses).entries({
         testProgress_ID: testProgressId,
-        title: question.title
+        title: q.title
       });
 
-      const questionAnswers = await SELECT.from(Answers).where({ question_ID: question.ID });
+      const answers = await SELECT.from(Answers).where({ question_ID: q.ID });
 
-      if (questionAnswers.length > 0) {
-        const answerProgressEntries = questionAnswers.map(answer => ({
-          questionProgress_ID: questionProgress.ID,
-          title: answer.title,
-          isCorrect: answer.isCorrect,
-          isSelected: false
-        }));
+      const entries = answers.map(a => ({
+        questionProgress_ID: qProgress.ID,
+        title: a.title,
+        isCorrect: a.isCorrect,
+        isSelected: false
+      }));
 
-        await INSERT.into(AnswerProgresses).entries(answerProgressEntries);
-      }
+      await INSERT.into(AnswerProgresses).entries(entries);
     }
   }
 
   srv.after('CREATE', JourneyProgresses, async (data, req) => {
-    await buildJourneyProgress(null, data.ID, data.journey_ID, req.user.id);
+    await createJourneyProgress(data.ID, data.journey_ID, req.user.id);
   });
 
   srv.before('UPDATE', ChapterProgresses, async (req) => {
-
     if (!req.data.isCompleted) return;
 
-    const chapterProgress = await checkOwnership(req, ChapterProgresses);
-
+    const chapterProgress = await checkOwner(req, ChapterProgresses);
     const chapter = await SELECT.one.from(Chapters).where({ ID: chapterProgress.chapter_ID });
+
     if (!chapter) return req.reject(404, req._t('CHAPTER.NOT_FOUND'));
 
     const previousChapters = await SELECT.from(Chapters)
       .where({ unit_ID: chapter.unit_ID })
       .and({ order: { '<': chapter.order } });
 
-    if (!previousChapters.length) return;
+    if (previousChapters.length > 0) {
+      const incompletePrevious = await SELECT.from(ChapterProgresses).where({
+        unitProgress_ID: chapterProgress.unitProgress_ID,
+        chapter_ID: { in: previousChapters.map(ch => ch.ID) },
+        isCompleted: false
+      });
 
-    const incompletePrevious = await SELECT.from(ChapterProgresses).where({
-      unitProgress_ID: chapterProgress.unitProgress_ID,
-      chapter_ID: { in: previousChapters.map(ch => ch.ID) },
-      isCompleted: false
-    });
-
-    if (incompletePrevious.length)
-      return req.reject(409, req._t('CHAPTER.PREVIOUS_NOT_COMPLETED'));
+      if (incompletePrevious.length > 0)
+        return req.reject(409, req._t('CHAPTER.PREVIOUS_NOT_COMPLETED'));
+    }
   });
 
   srv.on('submitTest', async (req) => {
-
     const { testProgress_ID } = req.data;
     if (!testProgress_ID) return req.reject(400, req._t('TEST.PROGRESS_REQUIRED'));
 
     const testProgress = await SELECT.one.from(TestProgresses).where({ ID: testProgress_ID });
     if (!testProgress) return req.reject(404, req._t('TEST.NOT_FOUND'));
 
-    const courseProgress = await SELECT.one.from(CourseProgresses)
+    const cp = await SELECT.one.from(CourseProgresses)
       .where({ ID: testProgress.courseProgress_ID });
 
-    if (!courseProgress || courseProgress.user_ID !== req.user.id)
-      return deny(req);
+    if (!cp || cp.user_ID !== req.user.id) return deny(req);
 
     if (testProgress.passed != null)
       return req.reject(409, req._t('TEST.ALREADY_SUBMITTED'));
 
-    const questionProgressList = await SELECT.from(QuestionProgresses)
-      .where({ testProgress_ID });
+    const qProgress = await SELECT.from(QuestionProgresses).where({ testProgress_ID });
+    const qIds = qProgress.map(q => q.ID);
 
-    const questionIds = questionProgressList.map(question => question.ID);
+    const answers = await SELECT.from(AnswerProgresses)
+      .where({ questionProgress_ID: { in: qIds } });
 
-    const answerProgressList = await SELECT.from(AnswerProgresses)
-      .where({ questionProgress_ID: { in: questionIds } });
-
-    const answersByQuestion = new Map();
-    answerProgressList.forEach(answer => {
-      if (!answersByQuestion.has(answer.questionProgress_ID))
-        answersByQuestion.set(answer.questionProgress_ID, []);
-      answersByQuestion.get(answer.questionProgress_ID).push(answer);
-    });
-
-    let correctAnswers = 0;
-
-    for (const question of questionProgressList) {
-      const answers = answersByQuestion.get(question.ID) || [];
-      const isCorrect =
-        answers.length > 0 &&
-        answers.every(ans => ans.isCorrect === ans.isSelected);
-
-      if (isCorrect) correctAnswers++;
+    const map = {};
+    for (const a of answers) {
+      if (!map[a.questionProgress_ID]) map[a.questionProgress_ID] = [];
+      map[a.questionProgress_ID].push(a);
     }
 
-    const totalQuestions = questionProgressList.length;
-    const scorePercent =
-      totalQuestions === 0
-        ? 0
-        : Math.round((correctAnswers / totalQuestions) * 100);
+    let correct = 0;
 
-    const passed = scorePercent >= testProgress.thresholdPercent;
+    for (const q of qProgress) {
+      const list = map[q.ID];
+      const ok = list && list.every(a => a.isCorrect === a.isSelected);
+      if (ok) correct++;
+    }
+
+    const total = qProgress.length;
+    const score = total === 0 ? 0 : Math.round((correct / total) * 100);
+    const passed = score >= testProgress.thresholdPercent;
 
     await UPDATE(TestProgresses)
-      .set({ scorePercent, passed })
+      .set({ scorePercent: score, passed })
       .where({ ID: testProgress_ID });
 
     return {
       message: req._t('TEST.SUBMITTED'),
-      scorePercent,
+      scorePercent: score,
       passed
     };
   });

@@ -73,7 +73,6 @@ entity Questions : cuid, managed {
   answers  : Composition of many Answers on answers.question = $self;
 }
 
-// ANSWERS
 entity Answers : cuid, managed {
   title     : String(250);
   question  : Association to Questions @assert.notNull;
