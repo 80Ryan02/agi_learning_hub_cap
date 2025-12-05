@@ -1,20 +1,20 @@
 using agi.learninghub as lh from '../db/schema';
 
-service UserService @(requires: 'authenticated') {
+service UserService @(requires: 'User') {
 
-  @restrict: [{ grant: 'READ', to: 'User' }]
+  @readonly
   entity Journeys as projection on lh.Journeys;
 
-  @restrict: [{ grant: 'READ', to: 'User' }]
+  @readonly
   entity Courses as projection on lh.Courses;
 
-  @restrict: [{ grant: 'READ', to: 'User' }]
+  @readonly
   entity Units as projection on lh.Units;
 
-  @restrict: [{ grant: 'READ', to: 'User' }]
+  @readonly
   entity Chapters as projection on lh.Chapters;
 
-  @restrict: [{ grant: 'READ', to: 'User' }]
+  @readonly
   entity Tests as projection on lh.Tests;
 
 
@@ -22,7 +22,9 @@ service UserService @(requires: 'authenticated') {
     { grant: 'READ',  to: 'User', where: 'user_ID = $user.id' },
     { grant: 'WRITE', to: 'User', where: 'user_ID = $user.id' }
   ]
-  entity MyJourneyProgresses as projection on lh.JourneyProgresses;
+  entity MyJourneyProgresses as projection on lh.JourneyProgresses {
+    *
+  };
 
   @restrict: [
     { grant: 'READ',  to: 'User', where: 'user_ID = $user.id' },
@@ -32,7 +34,7 @@ service UserService @(requires: 'authenticated') {
 
 
   @restrict: [
-    { grant: ['READ','WRITE'], to: 'User' }
+    { grant: ['READ','WRITE'], to: 'User', where: 'courseProgress.user_ID = $user.id' }
   ]
   entity MyUnitProgresses as projection on lh.UnitProgresses;
 
@@ -45,10 +47,8 @@ service UserService @(requires: 'authenticated') {
     { grant: ['READ','WRITE'], to: 'User' }
   ]
 
-
   entity MyTestProgresses as projection on lh.TestProgresses;
 
-  @restrict: [{ grant: 'EXECUTE', to: 'User' }]
   action submitTest(testProgress_ID : UUID) 
     returns {
       message       : String;

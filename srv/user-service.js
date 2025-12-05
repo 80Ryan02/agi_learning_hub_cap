@@ -1,5 +1,5 @@
 const cds = require('@sap/cds');
-const { SELECT, INSERT, UPDATE } = cds;
+// const { SELECT, INSERT, UPDATE } = cds;
 
 module.exports = (srv) => {
 
@@ -17,16 +17,15 @@ module.exports = (srv) => {
     Tests,
     Questions,
     Answers
-  } = cds.entities('agi.learninghub');
+  //} = cds.entities('agi.learninghub');
+  } = cds.db.entities;
 
   function deny(req, message = 'ERROR.NOT_AUTHORIZED') {
-    req.reject(403, req._t(message));
+    req.reject(403, message); // 403 nicht gut...
   }
 
   function getId(req) {
-    if (req.data?.ID) return req.data.ID;
-    if (req.params?.[0]?.ID) return req.params[0].ID;
-    return null;
+    return req.data?.ID || req.params?.[0]?.ID || null;
   }
 
   async function checkOwner(req, entity) {

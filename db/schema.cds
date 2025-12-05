@@ -9,12 +9,14 @@ entity Roles : cuid, managed {
 entity Users : cuid, managed {
   name       : String(120);
   avatarUrl  : String(255);
-  @assert.notNull
+  // @assert.notNull
+  @mandatory
   email      : String(255);
   role       : Association to Roles;
 }
 
 entity Journeys : cuid, managed {
+  @mandatory
   title       : String(120);
   description : String;
   isPublic    : Boolean;
@@ -23,8 +25,16 @@ entity Journeys : cuid, managed {
   journeyCourses    : Composition of many JourneyCourses on journeyCourses.journey = $self;
 }
 
+@assert.unique: {
+  fk: [journey,course]
+}
 entity JourneyCourses : cuid, managed {
+  @assert.target
+  @mandatory
   journey : Association to Journeys;
+
+  @assert.target
+  @mandatory
   course  : Association to Courses;
 }
 
@@ -37,6 +47,7 @@ entity Courses : cuid, managed {
   courseCategories : Composition of many CourseCategories on courseCategories.course = $self;
   units            : Composition of many Units on units.course = $self;
   courseProgresses : Association to many CourseProgresses on courseProgresses.course = $self;
+  test: Association to Tests;
 }
 
 entity Units : cuid, managed {
@@ -45,12 +56,17 @@ entity Units : cuid, managed {
   chapters       : Composition of many Chapters on chapters.unit = $self;
   unitProgresses : Association to many UnitProgresses on unitProgresses.unit = $self;
   course         : Association to Courses;
+  test: Association to Tests;
 }
 
+@assert.unique: {
+  order: [unit, order]
+}
 entity Chapters : cuid, managed {
   title           : String(120);
   description     : String;
-  order           : Integer @assert.notNull;
+  @assert.range: [0,_]
+  order           : Integer @assert.notNull; // OrderNo, damit keine Konflikte mit geschützen Bezeichner in DB Systemen
   durationMinutes : Integer;
   htmlContent     : LargeString;
   unit            : Association to Units;
@@ -81,7 +97,9 @@ entity Answers : cuid, managed {
 
 entity JourneyProgresses : cuid, managed {
   journey  : Association to Journeys;
-  user     : Association to Users;
+  @readonly
+  user     : Association to Users @cds.on.insert : $user;
+  // coursesProgresses: Association to many CourseProgresses...
   favorite : Boolean;
   assigned : Boolean;
   deadline : Date;
@@ -104,7 +122,7 @@ entity UnitProgresses : cuid, managed {
 entity ChapterProgresses : cuid, managed {
   unitProgress : Association to UnitProgresses;
   chapter      : Association to Chapters;
-  isCompleted  : Boolean;
+  isCompleted  : Boolean; // Einheitlich, entweder immer IS/HAS oder gar nicht...
 }
 
 entity TestProgresses : cuid, managed {
@@ -116,10 +134,10 @@ entity TestProgresses : cuid, managed {
   questionProgresses : Composition of many QuestionProgresses 
                         on questionProgresses.testProgress = $self;
 
-  title              : String(250);
-  description        : String;
-  thresholdPercent   : Integer;
-  timeLimitMinutes   : Integer;
+  // title              : String(250);
+  // description        : String;
+  // thresholdPercent   : Integer;
+  // timeLimitMinutes   : Integer;
 
   scorePercent       : Integer;
   passed             : Boolean;
@@ -127,18 +145,22 @@ entity TestProgresses : cuid, managed {
 
 entity QuestionProgresses : cuid, managed {
   testProgress     : Association to TestProgresses;
+
+  question: Association to one Questions;
+
   answerProgresses : Composition of many AnswerProgresses 
                       on answerProgresses.questionProgress = $self;
-  title            : String(250);
+  // title            : String(250);
 }
 
 entity AnswerProgresses : cuid, managed {
   questionProgress : Association to QuestionProgresses;
-  title            : String(250);
+  // title            : String(250);
   isCorrect        : Boolean;
   isSelected       : Boolean;
 }
 
+// CodeList
 entity Levels : cuid, managed {
   title : String(120);
 }
